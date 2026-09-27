@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
+import type { PlaybackTraceContext } from "../src/playback-diagnostics.ts";
 import type { SubtitleTrack } from "../src/subtitles.ts";
 import type { TokenResult } from "../src/token-service.ts";
 import type { RawCaptionTrack } from "../src/youtube-caption-tracks.ts";
@@ -20,6 +21,7 @@ const mockFetchYoutubeSabrSession = mock(
 		client = "MWEB",
 		_reloadPlaybackParams?: string,
 		_isolated = false,
+		_trace?: PlaybackTraceContext,
 	): Promise<YoutubeSabrSession> => ({
 		videoId,
 		client: client === "WEB" ? "WEB" : "MWEB",
@@ -232,7 +234,13 @@ describe("handler", () => {
 		);
 
 		expect(res.status).toBe(200);
-		expect(mockFetchYoutubeSabrSession.mock.calls.at(-1)).toEqual(["abc", "MWEB", "reload-secret"]);
+		expect(mockFetchYoutubeSabrSession.mock.calls.at(-1)).toEqual([
+			"abc",
+			"MWEB",
+			"reload-secret",
+			false,
+			undefined,
+		]);
 		expect(res.url).not.toContain("reload-secret");
 	});
 
