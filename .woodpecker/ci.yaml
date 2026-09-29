@@ -1,0 +1,28 @@
+clone:
+  git:
+    image: woodpeckerci/plugin-git:2.10.0
+    settings:
+      partial: false
+      depth: 0
+      fetch-target-branch: true
+
+when:
+  - event: push
+    branch: [dev, main]
+  - event: pull_request
+  - event: manual
+
+steps:
+  - name: quality
+    image: oven/bun:1.4.2-slim@sha256:debbe76858f2e398d2937c1eceeb82c571ac1fcd78aadf00e9634578ac2b5ef7
+    environment:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    commands:
+      - |
+        set -eu
+        bun install --frozen-lockfile
+        bun audit --audit-level=high
+        bun run lint
+        bun run typecheck
+        bun test --coverage --coverage-reporter=lcov
+        bun run build
