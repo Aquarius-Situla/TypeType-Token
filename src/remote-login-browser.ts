@@ -177,6 +177,21 @@ export async function createRemoteLoginPage(
 ): Promise<RemoteLoginPage> {
 	const browser = await ensureRemoteBrowser(config);
 	const context = await browser.newContext(contextOptions(config));
+	await context.addInitScript(() => {
+		try {
+			if (window.PublicKeyCredential) {
+				window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () =>
+					Promise.resolve(false);
+				window.PublicKeyCredential.isConditionalMediationAvailable = () => Promise.resolve(false);
+			}
+			if (navigator.credentials) {
+				navigator.credentials.get = () =>
+					Promise.reject(new DOMException("The operation is not supported.", "NotSupportedError"));
+				navigator.credentials.create = () =>
+					Promise.reject(new DOMException("The operation is not supported.", "NotSupportedError"));
+			}
+		} catch {}
+	});
 	const page = await context.newPage();
 	page.on("request", (request) => {
 		const poToken = capturePot(request.url());
