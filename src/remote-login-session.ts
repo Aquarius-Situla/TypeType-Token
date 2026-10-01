@@ -34,6 +34,7 @@ export class RemoteLoginSession {
 	private closed = false;
 	private captureStarted = false;
 	private lastLoginState = "";
+	private oopsHandshakeRetried = false;
 	private screenshotFailures = 0;
 	private expiryTimer: ReturnType<typeof setTimeout>;
 	private frameTimer: ReturnType<typeof setTimeout> | null = null;
