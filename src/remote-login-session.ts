@@ -188,7 +188,7 @@ export class RemoteLoginSession {
 		if (this.closed || !this.connection || !this.page) return;
 		if (this.connection.bufferedAmount() <= this.config.maxBufferedBytes) {
 			const frame = await this.page.page
-				.screenshot({ type: "jpeg", quality: this.config.jpegQuality }
+				.screenshot({ type: "jpeg", quality: this.config.jpegQuality })
 				.catch((error) => this.reportScreenshotFailure(error));
 			if (frame && frame.byteLength <= this.config.maxFrameBytes) this.connection.sendBinary(frame);
 		}
