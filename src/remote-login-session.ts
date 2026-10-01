@@ -115,6 +115,21 @@ export class RemoteLoginSession {
 			if (await this.page.hasLoginCookie()) {
 				void this.captureSession();
 			} else {
+				if (
+					this.page.url().includes("/oops") &&
+					!this.oopsHandshakeRetried &&
+					(await this.page.hasGoogleLoginCookie())
+				) {
+					this.oopsHandshakeRetried = true;
+					this.diagnostics.log(
+						"detected youtube.com/oops after google authentication, automatically retrying youtube signin handshake",
+					);
+					await this.page
+						.retrySignInHandshake()
+						.catch((err) =>
+							this.diagnostics.log(`oops handshake retry failed: ${describeError(err)}`),
+						);
+				}
 				this.scheduleLoginCheck();
 			}
 		} catch (error) {
@@ -173,7 +188,7 @@ export class RemoteLoginSession {
 		if (this.closed || !this.connection || !this.page) return;
 		if (this.connection.bufferedAmount() <= this.config.maxBufferedBytes) {
 			const frame = await this.page.page
-				.screenshot({ type: "jpeg", quality: this.config.jpegQuality })
+				.screenshot({ type: "jpeg", quality: this.config.jpegQuality }
 				.catch((error) => this.reportScreenshotFailure(error));
 			if (frame && frame.byteLength <= this.config.maxFrameBytes) this.connection.sendBinary(frame);
 		}
