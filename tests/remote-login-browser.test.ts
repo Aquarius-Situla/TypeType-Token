@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { Cookie } from "playwright";
 import {
 	installWebAuthnBypassOverrides,
+	isGoogleLoginCookie,
 	isYoutubeLoginCookie,
 	isYoutubeUrl,
 } from "../src/remote-login-browser.ts";
@@ -28,6 +29,13 @@ describe("remote login browser login detection", () => {
 		expect(isYoutubeUrl("https://www.youtube.com/")).toBe(true);
 		expect(isYoutubeUrl("https://accounts.google.com/v3/signin/challenge/totp")).toBe(false);
 		expect(isYoutubeUrl("nope")).toBe(false);
+	});
+
+	it("detects google login cookies correctly", () => {
+		expect(isGoogleLoginCookie(cookie(".google.com", "SID"))).toBe(true);
+		expect(isGoogleLoginCookie(cookie("google.com", "SSID"))).toBe(true);
+		expect(isGoogleLoginCookie(cookie(".youtube.com", "SID"))).toBe(false);
+		expect(isGoogleLoginCookie(cookie(".google.com", "SID", ""))).toBe(false);
 	});
 });
 
