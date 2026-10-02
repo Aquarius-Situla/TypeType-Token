@@ -179,7 +179,7 @@ function capturePot(url: string): string | null {
 	return pot && pot.length > 0 ? pot : null;
 }
 
-export function installWebAuthnBypassOverrides(target: {
+type WebAuthnTarget = {
 	PublicKeyCredential?: {
 		isUserVerifyingPlatformAuthenticatorAvailable?: () => Promise<boolean>;
 		isConditionalMediationAvailable?: () => Promise<boolean>;
@@ -190,7 +190,9 @@ export function installWebAuthnBypassOverrides(target: {
 			create?: (options?: CredentialCreationOptions) => Promise<Credential | null>;
 		};
 	};
-}): void {
+};
+
+export function installWebAuthnBypassOverrides(target: WebAuthnTarget = globalThis): void {
 	try {
 		if (target.PublicKeyCredential) {
 			target.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () =>
@@ -229,37 +231,7 @@ export async function createRemoteLoginPage(
 ): Promise<RemoteLoginPage> {
 	const browser = await ensureRemoteBrowser(config);
 	const context = await browser.newContext(contextOptions(config));
-	await context.addInitScript(() => {
-		try {
-			if (window.PublicKeyCredential) {
-				window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () =>
-					Promise.resolve(false);
-				window.PublicKeyCredential.isConditionalMediationAvailable = () => Promise.resolve(false);
-			}
-			if (navigator.credentials) {
-				const originalGet = navigator.credentials.get?.bind(navigator.credentials);
-				const originalCreate = navigator.credentials.create?.bind(navigator.credentials);
-
-				navigator.credentials.get = (options?: CredentialRequestOptions) => {
-					if (options?.publicKey) {
-						return Promise.reject(
-							new DOMException("The operation is not supported.", "NotSupportedError"),
-						);
-					}
-					return originalGet ? originalGet(options) : Promise.resolve(null);
-				};
-
-				navigator.credentials.create = (options?: CredentialCreationOptions) => {
-					if (options?.publicKey) {
-						return Promise.reject(
-							new DOMException("The operation is not supported.", "NotSupportedError"),
-						);
-					}
-					return originalCreate ? originalCreate(options) : Promise.resolve(null);
-				};
-			}
-		} catch {}
-	});
+	await context.addInitScript(installWebAuthnBypassOverrides);
 	const page = await context.newPage();
 	page.on("request", (request) => {
 		const poToken = capturePot(request.url());
