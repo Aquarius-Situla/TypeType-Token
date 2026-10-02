@@ -15,6 +15,7 @@ import type {
 	RemoteLoginPageFactory,
 	RemoteLoginSessionOptions,
 } from "./remote-login-session-types.ts";
+import { isYoutubeOopsUrl } from "./remote-login-url.ts";
 
 const SCREENSHOT_FAILURE_LOG_EVERY = 20;
 
@@ -117,7 +118,7 @@ export class RemoteLoginSession {
 				void this.captureSession();
 			} else {
 				if (
-					this.page.url().includes("/oops") &&
+					isYoutubeOopsUrl(this.page.url()) &&
 					!this.oopsHandshakeRetried &&
 					(await this.page.hasGoogleLoginCookie())
 				) {
